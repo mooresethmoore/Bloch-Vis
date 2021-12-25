@@ -1,0 +1,245 @@
+.main {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+#butt {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.dropdown-menu {
+    padding: 0 10px;
+    max-height: 300px;
+    overflow:scroll;
+    -webkit-overflow-scrolling: touch;
+    width: 369px;
+}
+
+li {
+  list-style: none;
+  padding: 0;
+}
+
+ul {
+  padding: 0;
+}
+
+label {
+  font-size: 16px;
+}
+
+.generate {
+  width: 100%;
+  border-radius: 4px;
+}
+
+table {
+  width:100%;
+}
+
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 15px;
+}
+
+tr:hover { 
+  background: seagreen; 
+}
+
+#wrapper {
+    padding-left: 0;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+}
+
+#sidebar-wrapper {
+    z-index: 1000;
+    position: fixed;
+    right: 250px;
+    width: 0;
+    height: 100%;
+    margin-right: -250px;
+    margin-left: 0px;
+    overflow-y: auto;
+    background: rgba(102, 207, 255, 0.6);
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+    border-left: 3px solid #000;
+    
+}
+
+#page-content-wrapper {
+    width: 69.4%;
+    position: absolute;
+    padding-right:20px;
+    margin-right: -250px;
+}
+
+#wrapper {
+    padding-right: 250px;
+}
+
+#sidebar-wrapper {
+    width: 30%;
+}
+/*
+#table-wrapper {
+  padding: 1em;
+  position: relative;
+  float:right;
+  padding-right:10px;
+}*/
+
+#table-scroll {
+  height: 100%;
+  overflow: auto;
+  margin-top: 20px;
+  /*display: table-header-group;*/
+  
+}
+.tit{
+  /*background-color:white;*/
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 32px;
+  font-weight: 699;
+}
+
+.tabhead thead {
+  /*display:table-header-group;*/
+  background: #FFBEAC;
+}
+
+#table-wrapper table {
+  width: 100%;
+}
+
+#table-wrapper table * {
+  
+  color: black;
+}
+
+#table-wrapper table .text {
+  position: absolute;
+  top: -20px;
+  z-index: 2;
+  height: 20px;
+  width: 25%;
+  /*border: 1px solid red;*/
+}
+
+label {
+font-size: 16px;
+}
+
+
+table {
+width:100%;
+}
+
+th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+.matrix {
+  position: relative;
+}
+.matrix:before, .matrix:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  border: 1px solid #000;
+  width: 6px;
+  height: 100%;
+}
+.matrix:before {
+  left: -6px;
+  border-right: 0;
+}
+.matrix:after {
+  right: -6px;
+  border-left: 0;
+}
+
+#blochs {
+  background-color: #FFE5FF;
+}
+
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 100px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.blochOb {
+  position:relative;
+}
+
+rect {
+  fill:blue;
+  stroke:pink;
+  stroke-width:1;
+  fill-opacity:0.1;
+  stroke-opacity:0.85;
+}
+circle {
+  fill:yellow;
+  stroke:pink;
+  stroke-width:1;
+  fill-opacity:0.18;
+  stroke-opacity:0.85;
+}
+
+.qcc {
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
+  font-size:4;
+  fill:black;
+}

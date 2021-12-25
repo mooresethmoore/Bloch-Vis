@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>Quantum Circuit Visualization</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <link rel="stylesheet" type="text/css" href="./static/css/style.css">
+    <link rel="stylesheet" type="text/css" href="./static/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" type="text/css" href="./static/css/style.css">
+
+    <script type="module" src="index.js"></script>
+
+    <script type="text/javascript" src="static/js/d3.js"></script>
+    <script type="text/javascript" src="static/js/d3-hierarchy.js"></script>
+    <script type="text/javascript" src="static/js/d3-collection.js"></script>
+    <script type="text/javascript" src="static/js/complex.js"></script>
+</head>
+
+
+<body id="canvasBody">
+    <div id='wrapper'>
+        <div id='sidebar-wrapper'>
+            
+            
+                    
+            <div class='modal' id='qselect'>
+                <div class='modal-content'>
+                    <span class="close" onclick="closeSelect()">&times;</span>
+                    <h3 class="tranTit"></h3>
+                    <p>Select Qubit(s) to rotate:</p><br />
+                    <div class='numcont' style="display: none">
+                        By <input type="number" value="180" class="num"> Degrees</input>
+                    </div>
+                    <button class="confirm" onclick="gateTrans()">Transform</button>
+                </div>
+            </div>
+
+            <div class='modal' id='cnselect'>
+                <div class='modal-content'>
+                    <span class="close" onclick="closeCnot()">&times;</span>
+                    <h3>CNOT Selection Qubits</h3>
+                    <p class="quest">Select Control (left) and Target (right)</p><br />
+                    <p><i>Choosing the same bit for both control and target does not work.</i></p>
+                    <div class="row" id="tarcon">
+                        <select id="left">
+                            <option value="1">qubit 1</option>
+                            <option value="2">qubit 2</option>
+                            <option value="3">qubit 3</option>
+                        </select>
+                        <select id="right">
+                            <option value="1">qubit 1</option>
+                            <option value="2">qubit 2</option>
+                            <option value="3">qubit 3</option>
+                        </select>
+                    </div>
+                    <button class="confirm" onclick="cNot()">Entangle</button>
+                </div>
+            </div>
+            <div class='modal' id='cmeasure'>
+                <div class='modal-content'>
+                    <span class="close" onclick="closeMeasure()">&times;</span>
+                    <h3>Measurement Selection</h3>
+                    <p>Select a Qubit to measure in the Z (<0| , |1>) basis.</p><br />
+                    <p><i>Measurement will collapse the superposition of the measured qubit into 100% <0| or |1> states, and will also change the states of any entangled qubits.</i></p>
+                    <select id="smeasure">
+                        <option value="1">qubit 1</option>
+                        <option value="2">qubit 2</option>
+                        <option value="3">qubit 3</option>
+                    </select>
+                    <button class="confirm" onclick="measure()">Measure</button>
+                </div>
+                
+            </div>
+
+            <div id='table-wrapper'>
+                <div id='table-scroll'>
+                    <table>
+                        <caption class='tit'>Qubit Transformations</caption>
+                        <caption><i>Click on a row to apply a rotation, entanglement, or measurement </i></caption>
+                        <thead>
+                        <th>Gate</th>
+                        <th>Description</th>
+                        </thead>
+                        <tr id='xGate' class="gr" onclick="qSelect('X')">
+                            <td class="gc">X</td>
+                            <td class="gc">Performs a 180 degree rotation about the X axis<br />Flips &lt;0| &#8596; |1&gt; and &lt;+i| &#8596; |&#8722;i&gt;</td>
+                        </tr>
+                        <tr id='xTGate' class="gr" onclick="qSelect('X',true)">
+                            <td class="gc">X(&Theta;)</td>
+                            <td class="gc">Performs a &Theta; degree rotation about the X axis</td>
+                        </tr>
+                        <tr id='yGate' class="gr" onclick="qSelect('Y')">
+                            <td class="gc">Y</td>
+                            <td class="gc">Performs a 180 degree rotation about the Y axis<br />Flips &lt;+| &#8596; |&#8722;&gt; and &lt;0| &#8596; |1&gt; *with relative phase</td>
+                        </tr>
+                        <tr id='yTGate' class="gr" onclick="qSelect('Y',true)">
+                            <td class="gc">Y(&Theta;)</td>
+                            <td class="gc">Performs a &Theta; degree rotation about the Y axis</td>
+                        </tr>
+                        <tr id='zGate' class="gr" onclick="qSelect('Z')">
+                            <td class="gc">Z</td>
+                            <td class="gc">Performs a 180 degree rotation about the Z axis<br />Flips &lt;+| &#8596; |&#8722;&gt; and ;&lt;+i| &#8596; |&#8722;i&gt; *with relative phase</td>
+                        </tr>
+                        <tr id='zTGate' class="gr" onclick="qSelect('Z',true)">
+                            <td class="gc">Z(&Theta;)</td>
+                            <td class="gc">Performs a &Theta; degree rotation about the Z axis</td>
+                        </tr>
+                        <tr id='hGate' class="gr" onclick="qSelect('H')">
+                            <td class="gc">H</td>
+                            <td class="gc">Performs a transformation from the Standard Basis (z-axis) to the Hadamard basis (x-axis)<br />Flips pairs (&lt;0| &#8596; |+&gt;) and (&lt;1| &#8596; |&#8722;&gt;) </td>
+                        </tr>
+                        <tr id='cN' class="gr" onclick="qSelectCnot()">
+                            <td class="gc">cX(C,T)</td>
+                            <td class="gc">Controlled Not Gate:<br />Applies X gate to (T)arget if (C)ontrol Qubit measures |1&gt;<br /><b>Fundamental operation for entanglement</b></td>
+
+                        </tr>
+                    </table>
+                    <div class="row" style="justify-content: center;
+    align-items: center;">
+                        <button id="butmeasure" onclick="qSelectMeasure()" width="200" height="75">Perform Measurement</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id='page-content-wrapper'>
+            <div class='modal mobile' id='mobscreen'>
+                <div class='modal-content' style="margin-left:-15px;height:400px; width:600px">
+                    <span class="close" onclick="closeMobile()">&times;</span>
+                    <h3 class="Mobile Device Detected"></h3>
+                    
+                    <p style="font-size:42px;">Unfortunately this simulation can only be run on a computer.<br/><br/>Homepage coming soon 🦧</p><br/>
+                    <div class="row" style="margin-left:5px; font-size:42px;">
+                        <a href="https://www.youtube.com/watch?v=0YHx4tMk0Vs">OK</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div id='blochs'>
+                <div class="row" style="justify-content: center;
+    align-items: center;">
+                    <div class='blochOb'>
+                        <canvas id="bloch1" style="border: none;" width="400" height="400"></canvas>
+                        <canvas id="bloch1-text" style="border: none; position: absolute;top: 0; left: 0;" width="400" height="400"></canvas>
+                    </div>
+
+                    <div class='blochOb'>
+                        <canvas id="bloch2" style="border: none;" width="400" height="400"></canvas>
+                        <canvas id="bloch2-text" style="border: none; position: absolute;top: 0; left: 0;" width="400" height="400"></canvas>
+                    </div>
+                </div>
+                <div class="row" style="justify-content: center;
+    align-items: center;">
+                    <div class='blochOb'>
+                        <canvas id="bloch3" style="border: none;" width="400" height="400"></canvas>
+                        <canvas id="bloch3-text" style="border: none; position: absolute;top: 0; left: 0;" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Circuit Diagram</h2>
+            <div class="row">
+                <svg id="qc" width="80%" ,height="300"></svg>
+                <input type="button" onclick="location.reload()" style="width:10%">Reset?</input>
+            </div>
+            <div align="center">
+                <h3>StateVector Representation</h3>
+            </div>
+            <div class="row">
+                <table class="matrix" id="repMat" style="width:20%; margin-left:25%;">
+                    <thead>
+                    <th>State</th>
+                    </thead>
+                    <tbody id="reprows">
+                    </tbody>
+                </table>
+                <table class="matrix" id="sv" style="width:20%;">
+                    <thead>
+                    <th class="tabhead">Probability</th>
+                    </thead>
+                    <tbody id="svrows">
+                    </tbody>
+                </table>
+                <table class="matrix" id="sp" style="width:20%; margin-right:25%;">
+                    <thead>
+                    <th class="tabhead">Superposition</th>
+                    </thead>
+                    <tbody id="sprows">
+                    </tbody>
+                </table>
+            </div>
+            <div class="row" id="foot" style="margin-left:29%;text-align:center; font-style:oblique;">
+                <b><br/><br/>Website design and creation by Seth Moore. <br/>webGL graphics and animations provided by Maaz Mombasawala.</b>
+        
+            </div>
+        </div>
+    </div>
+    
+</body>
+
+<script type="text/javascript" charset="UTF-8">
+    var blochData = window.blochData;
+    var bvecs = window.bvecs;
+
+
+    var nqub = 3;
+    var svlen = Math.pow(2, nqub);
+    var cStates = []; // list of {'gate':'H','qbit':'a'} or for special case {'gate':'Cx','qbit':'ac'} # ONLY 4 Greedy imp
+    var qstates = [];
+    var gateSelected;
+    //var cordStates=[];
+    var curCords=[];
+
+    var stateVec = [];
+    /*stateVec.push(new Complex(1));
+    for (let i = 1; i < svlen; i++) {
+        stateVec.push(new Complex(0));
+    } */
+
+    function initSV() {
+        stateVec = [];
+        let stateChar = [];
+        stateVec.push(new Complex(1));
+        stateChar.push("");
+        for (let i = 1; i < svlen; i++) {
+            stateVec.push(new Complex(0));
+            stateChar.push("");
+        }
+
+        
+        
+        for (let q = 0; q < nqub; q++) {
+            let trig = expRight(q);
+            let flip = 0;
+            for (let j = 0; j < svlen; j++) {
+                stateChar[j] = stateChar[j] + flip;
+                
+                //stateVec[j] = stateVec[j].mul(qVecs[q][flip]);
+                //console.log(j % trig);
+                if (j % trig == trig - 1) {
+                    flip = flip + 1;
+                    flip = flip % 2;
+                    //console.log(flip);
+                }
+
+            }
+        }
+
+        //d3.selectAll("#repMat").selectAll("#reprows").selectAll("tr").exit().remove();
+        d3.selectAll("#repMat").selectAll("#reprows").selectAll("tr")
+            .data(stateChar)
+
+            .enter()
+            .append("tr")
+            .append("td")
+            .attr("class", "vc")
+            .text((d) => "|"+d+"\u003E")
+            .exit().remove();
+
+        drawSV();
+    }
+
+
+    function initQC(n) {
+        var circs = d3.select("#qc").selectAll('line').data(d3.range(n))
+            .remove()
+            .enter()
+            .append('line')
+            .attr('id', (d) => "bit" + d)
+            .attr('x1', '20')
+            .attr('x2', '1000')
+            .attr('y1', (d) => 20 + 50 * (d))
+            .attr('y2', (d) => 20 + 50 * (d))
+            .attr('stroke', "black");
+
+
+
+        let popup = d3.select("#qselect").selectAll(".modal-content");
+        d3.select("#qselect").selectAll(".modal-content").select(".numcont").select("input").attr("value", 180);
+        popup.select(".numcont").select("input").on("input", function () {
+            d3.select("#qselect").selectAll(".modal-content").select(".numcont").select("input").attr("value", this.value);
+        });
+        let boxes = popup.selectAll("input").filter(function () {
+            return !d3.select(this).classed("num");
+        })
+            .data(d3.range(1, n + 1))
+            .remove()
+            .enter()
+            //.insert("input",".confirm")
+            .insert("div", ".confirm")
+            .attr('class', 'row')
+            .attr('class', 'justify-content-center');
+
+
+        boxes.append('input')
+            .attr("type", "checkbox")
+            .attr("id", (d) => "qsel" + d);
+
+        boxes.append("label")
+
+            .text((d) => "qubit " + d);
+
+
+        cStates = []; // list of {'gate':'H','qbit':'a'} or for special case {'gate':'Cx','qbit':'ac'}
+
+        var qVecs = []
+        curCords=[];
+        for (let i = 1; i <= n; i++) {
+            qVecs.push([new Complex("1"), new Complex("0")]); //initialize all qubits to <0|
+            curCords.push({'theta':90,'phi':0})
+        }
+        return qVecs;
+    }
+
+    var circuitx = 20;
+    var cinc = 35;
+
+    function drawGate(gat, qnum) {
+        line = d3.select("#qc"); //0 indexed
+        line
+            .append("rect")
+            .attr("x", circuitx)
+            .attr("y", 8 + 50 * qnum)
+            .attr("width", 22)
+            .attr("height", 22);
+
+        line.append("text")
+            .attr("class", "qcc")
+            .attr("x", circuitx + 3)
+            .attr("y", 24 + 50 * qnum)
+            .text(gat);
+
+
+        circuitx += cinc;
+    }
+
+    function drawCnot(c, t) {
+        line = d3.select("#qc");//0 indexed
+        line.append("circle")
+            .attr("cx", circuitx + 7)
+            .attr("cy", 16 + 50 * t)
+            .attr("r", 8);
+
+        line.append("text")
+            .attr("class", "qcc")
+            .attr("x", circuitx)
+            .attr("y", 23 + 50 * t)
+            .text("+");
+
+        line.append("line")
+            .attr('x1', circuitx + 7)
+            .attr('x2', circuitx + 7)
+            .attr('y1', 18 + 50 * c)
+            .attr('y2', 18 + 50 * t)
+            .attr('stroke', "blue");
+
+        circuitx += cinc;
+
+        //draw string!!
+    }
+
+    function qSelect(gat, degrees = false) {
+        //console.log(gat);
+        gateSelected = gat;
+        d3.select("#qselect").select(".modal-content").select(".tranTit").text(gat + " Gate Rotation:\n");
+
+        d3.select("#qselect").style("display", "block");
+        if (degrees) {
+            d3.select("#qselect").select(".modal-content").select(".numcont").style("display", "inline");
+        } else {
+            d3.select("#qselect").select(".modal-content").select(".numcont").style("display", "none");
+        }
+
+        //check on #Gates applied?
+    }
+
+    function qSelectCnot() {
+        d3.select("#cnselect").style("display", "block");
+    }
+
+    function qSelectMeasure() {
+        d3.select("#cmeasure").style("display", "block");
+    }
+
+    function closeSelect() {
+        d3.select("#qselect").select(".modal-content").select(".numcont").style("display", "none");
+        d3.select("#qselect").style("display", "none");
+    }
+
+    function closeCnot() {
+        d3.select("#cnselect").style("display", "none");
+    }
+
+    function closeMeasure() { //in future use this and ParentNodes to create one end all Close Popup function!
+        d3.select("#cmeasure").style("display", "none");
+    }
+    
+    function closeMobile() { //in future use this and ParentNodes to create one end all Close Popup function!
+        d3.select("#mobscreen").style("display", "none");
+    }
+
+    function gateTrans() {
+        // check gateSelected, find qselected, and use switch on gate to call transform
+        let popup = d3.select("#qselect");
+
+        //find checks, then unselect
+        let qsel = [];
+        for (let i = 1; i <= nqub; i++) {
+            let chk = popup.selectAll(".modal-content").selectAll('div').select("#qsel" + i);
+            if (chk.property("checked")) {
+                chk.property("checked", false);
+                //console.log(i);
+                qsel.push(i - 1); //0 index
+            }
+        }
+
+        let deg = parseFloat(popup.selectAll(".modal-content").select(".numcont").select("input").property("value"));
+
+        //console.log(deg);
+
+        d3.select("#qselect").selectAll(".modal-content").select(".numcont").select("input").property("value", 180);
+        //console.log(qsel.length);
+        switch (gateSelected) {
+            case 'X':
+                for (let q = 0; q < qsel.length; q++) {
+                    //console.log(q);
+                    gateApply(qsel[q], xGate, deg);
+                }
+                break;
+            case 'Y':
+                for (let q = 0; q < qsel.length; q++) {
+                    gateApply(qsel[q], yGate, deg);
+                }
+                break;
+            case 'Z':
+                for (let q = 0; q < qsel.length; q++) {
+                    gateApply(qsel[q], zGate, deg);
+
+                }
+                break;
+            case 'H':
+                for (let q = 0; q < qsel.length; q++) {
+                    gateApply(qsel[q], hGate, deg);
+                }
+                break;
+            default:
+                console.log("Error with gateSelected = " + gateSelected);
+                break;
+        }
+
+        popup.style("display", "none");
+    }
+
+
+    function gateApply(qnum, gate, deg=180) {
+        var qnew = gate(qVecs[qnum], deg);
+        // take drawGate into gateTrans before call
+        qstates.push(qVecs); //old imp -> kept over following method because it holds for measurement
+        //qstates.push({ qnum: qVecs[qnum] })
+        console.log(qnew);
+        qVecs[qnum] = qnew;
+        let cords = comp2Real(qnew);
+        curCords[qnum]=cords;
+        window.updateVector(blochData[qnum], bvecs[qnum], cords.theta, cords.phi);
+        if (deg == 180) {
+            drawGate(String(gate)[9].toUpperCase(), qnum);
+        } else {
+            drawGate(String(gate)[9].toUpperCase() + "\u03B8", qnum);
+        }
+
+        // now apply to tensor using expRight formula
+        let shiftFac = expRight(qnum);
+        let checked = [...Array(svlen).keys()];
+        while (checked.length > 0) {
+            let qnew = gate([stateVec[checked[0]], stateVec[checked[0] + shiftFac]], deg);
+            stateVec[checked[0]] = qnew[0];
+            stateVec[checked[0] + shiftFac] = qnew[1];
+            let remind = checked.indexOf(checked[0] + shiftFac);
+            checked.splice(remind,1);
+            checked.shift();
+        }/*
+        for (let j = 0; j < Math.pow(2, nqub - 1); j++) {
+            let qnew = gate([stateVec[j], stateVec[j + shiftFac]], deg);
+            stateVec[j] = qnew[0];
+            stateVec[j + shiftFac] = qnew[1];
+            //redraw stateVec
+
+        }*/
+        drawSV();
+
+    }
+
+    function matVecMul(m, v) {
+        var newv = [];
+        for (let i = 0; i < m.length; i++) {
+            s = new Complex(0);
+            for (let j = 0; j < m[0].length; j++) {
+                s = s.add(v[j].mul(m[i][j]));
+            }
+            newv.push(s);
+        }
+
+        return newv;
+    }
+
+    function measureBasis(q, b) {
+        return Math.pow(q[0].conjugate().mul(b[0]).add(q[1].conjugate().mul(b[1])).abs(),2);//no sqrt right?
+    }
+
+    function comp2Real(qubit) { // needs work -> could be more efficient / used once for initStates then rotated prev cords per gate
+        //* Alternative Gate rot method -> convert prev to (x,y,z), then apply rotation, then convert back to spherical
+        
+        //allows for 2-D complex qubit (for initial states) to be represented as (theta,phi)
+        //theta(0) is aligned along |0>, theta(pi) is aligned along |1>
+        let mag = qubit[0].abs();
+        let theta = 2 * Math.acos(mag);
+
+        let phi = 0;
+
+
+        if (mag.toFixed(4) != 1 && qubit[1].abs().toFixed(4) != 1) {
+            if (qubit[0].im.toFixed(4) == 0 && qubit[1].im.toFixed(4) == 0) {
+                phi = Math.sign(qubit[1].re) == Math.sign(qubit[0].re) ? 0 : 180;
+            }
+            else {
+                let im = new Complex("-1i");
+                let sq2 = 1 / Math.sqrt(2);
+                let plusi = [im.mul(sq2), new Complex(sq2)];
+                let minusi = [new Complex(sq2), im.mul(sq2)];
+                let plus = [new Complex(sq2), new Complex(sq2)];
+                let minus = [new Complex(sq2), new Complex(-1 * sq2)];
+                let mqp = measureBasis(qubit, plus);
+                let mqm = measureBasis(qubit, minus);
+                let mqpi = measureBasis(qubit, plusi);
+                let mqmi = measureBasis(qubit, minusi);
+                //qVecs[0][0].conjugate().mul(plusi[0])
+                //console.log([mqp, mqm, mqpi, mqmi]);
+                if (mqpi > mqmi) {
+                    phi = -90 + (mqp - mqm) * 90;
+                }
+                else {
+                    phi = 90 - (mqp - mqm) * 90;
+                }
+            }
+
+        }
+        return { 'theta': -1 * (theta * 180 / Math.PI) + 90, 'phi': phi } //cords
+    }
+
+    function expRight(i) {
+        return Math.pow(2, nqub - 1 - i); //0 indexed
+    }
+
+
+    function drawSV() {
+        d3.selectAll("#sv").selectAll("#svrows").selectAll("tr").remove();
+        d3.selectAll("#sv").selectAll("#svrows").selectAll("tr").data(stateVec)
+            
+            .enter()
+            .append("tr")
+            .append("td")
+            .attr("class", "vc")
+            .text(function (d) {
+                //console.log(d);
+                //return d.re.toFixed(4) + " + " + d.im.toFixed(4) + "i"; -> stateVec display imp, switching to probability interp
+                        //for explainability and to fix potential issue of how the real and complex terms are scaled for cnot collapse
+                return (Math.pow(d.abs(), 2) * 100).toFixed(2) + " %";
+            });
+
+        d3.selectAll("#sp").selectAll("#sprows").selectAll("tr").remove();
+        d3.selectAll("#sp").selectAll("#sprows").selectAll("tr").data(stateVec)
+
+            .enter()
+            .append("tr")
+            .append("td")
+            .attr("class", "vc")
+            .text(function (d) {
+                return d.re.toFixed(4) + " + " + d.im.toFixed(4) + "i"; 
+                
+            });
+
+
+    }
+
+    // GATES
+
+
+
+    //function
+
+    function xGate(vec, deg=180) {
+        //console.log(deg);
+        var qnew;
+        if (deg == 180) { //flip
+            qnew = [vec[1], vec[0]];
+            //drawGate("X", qnum); -> move to gateApp
+        }
+        else {
+            deg = deg * Math.PI / 180;
+            im = new Complex("-1i");
+            xG = [[Math.cos(deg / 2), im.mul(Math.sin(deg / 2))], [im.mul(Math.sin(deg / 2)), Math.cos(deg / 2)]];
+            qnew = matVecMul(xG, vec);
+            //console.log(qnew);
+            delete im;
+            //drawGate("X" + "\u03B8", qnum); -> move to gA
+        }
+
+        
+        return qnew;
+
+    }
+
+    function yGate(vec, deg=180) {
+        //console.log(deg);
+        var qnew;
+        
+        if (deg == 180) { //flip
+            let im = new Complex("-1i");
+            qnew = [im.mul(vec[1]), im.mul(-1).mul(vec[0])];
+        }
+        else {
+            deg = deg * Math.PI / 180;
+            let yG = [[Math.cos(deg / 2), -1 * Math.sin(deg / 2)], [Math.sin(deg / 2), Math.cos(deg / 2)]];
+            qnew = matVecMul(yG, vec);
+            delete im;
+        }
+
+
+        return qnew;
+
+    }
+
+    function zGate(vec, deg=180) {
+        //console.log(deg);
+        var qnew;
+
+        if (deg == 180) { //flip
+            qnew = [vec[0], vec[1].mul(-1)];
+        }
+        else {
+            deg = deg * Math.PI / 180;
+            let im = new Complex("-1i");
+            let zG = [[new Complex(Math.cos(deg / 2)).add(im.mul(Math.sin(deg / 2))), 0], [0, new Complex(Math.cos(deg / 2)).add(im.mul(-1).mul(Math.sin(deg / 2)))]];
+            qnew = matVecMul(zG, vec);
+            delete im;
+        }
+
+
+        return qnew;
+
+    }
+
+    function hGate(vec, deg = null) {//null degree to allow h to work with gateApply
+        var qnew;
+        //drawGate("H", qnum);
+        let hG = [[1 / Math.sqrt(2), 1 / Math.sqrt(2)], [1 / Math.sqrt(2), -1 / Math.sqrt(2)]];
+        qnew = matVecMul(hG, vec);
+
+        return qnew;
+    }
+
+
+    //CNOT & Measure
+
+    function cNotOp(lv, rv) { //lv=control, rv=target -> extrapolated for use in calcStateVec without redrawing on qc
+        let rc = expRight(lv);
+        let rt = expRight(rv);
+        let left = stateVec[rc];
+        let right = stateVec[rc + rt];
+        stateVec[rc] = right;
+        stateVec[rc + rt] = left; // swap
+
+
+        //the following formula works for n=3, but I believe some recursion will be required for this step with n>=4
+        let unused = [...Array(nqub).keys()];
+        let rm1 = unused.indexOf(lv);
+
+        unused.splice(rm1, 1);
+        let rm2 = unused.indexOf(rv);
+        unused.splice(rm2, 1);
+        //console.log(unused);
+        for (let j = 0; j < unused.length; j++) {
+            let shift = expRight(unused[j]);
+            let left = stateVec[rc + shift];
+            let right = stateVec[rc + rt + shift];
+            stateVec[rc + shift] = right;
+            stateVec[rc + rt + shift] = left; // swap
+        }
+    }
+
+    function cNot() {
+        //find control and target from checkboxes -> if input is invalid return without doing anything
+        let cont = d3.select("#cnselect");
+        let lv = cont.select("#left").property("value")-1;
+        let rv = cont.select("#right").property("value")-1;
+        if (lv != rv) {
+            //add cnot to cnot vec, draw circuit  -> in future draw line from blochs
+            cStates.push({ 'control': lv, 'target': rv }); // I don't think this is valuable in the SV implementation, unless it stores the stochastic position along qc
+            closeCnot();
+            drawCnot(lv, rv);
+
+            cNotOp(lv, rv);
+
+            drawSV();
+
+            svCords(lv);
+            svCords(rv); //does this eliminate phase? potential mistake line -> this will ruin the read of target on other bases if measured from qVecs
+        }
+    }
+
+
+    function calcStateVec() {
+
+        //needed if stateVec is displayed (eg. at bottom)
+        //however, this should ideally only be needed once under initial conditions case -> if gates apply tensored operator to prev statevec
+
+        //// NOTE!! without storing cStates (history of Cnot) result will not be correct if called after init.
+        // This should "hopefully" be correct if sv is recalculated then cnot flips are reapplied.
+
+
+        //assumes statevec is initialized elsewhere
+        //stateVec = []; //does this delete previous memory held by stateVec?
+
+        //if threading is possible, use recursion instead
+        for (let j = 0; j < svlen / 2; j++) {
+            //stateVec.push(qstates[0][0]);
+            stateVec[j] = qVecs[0][0];
+        }
+        for (let j = svlen / 2; j < svlen; j++) {
+            //stateVec.push(qstates[0][1]);
+            stateVec[j] = qVecs[0][1];
+        }
+        for (let q = 1; q < nqub; q++) {
+            let trig = expRight(q);
+            let flip = 0;
+            for (let j = 0; j < svlen; j++) {
+                stateVec[j] = stateVec[j].mul(qVecs[q][flip]);
+                if (j % trig == trig - 1) {
+                    flip++;
+                    flip = flip % 2;
+                }
+            }
+        }
+        for (let i = 0; i < cStates.length; i++) {
+            cNotOp(cStates[i]['control'], cStates[i]['target']);
+        }
+        drawSV();
+    }
+
+
+
+
+    function measure() {
+        let qnum = +d3.select("#cmeasure").select("#smeasure").property("value") - 1;
+
+        //let p0 = Math.pow(qVecs[qnum][0].abs(), 2); // old interp -> instead, let's calculate from SV.
+        //let p1 = Math.pow(qVecs[qnum][1].abs(), 2);
+
+        let p0=0;
+        let p1=0;
+        let shiftFac = expRight(qnum);
+        let checked = [...Array(svlen).keys()];
+        while (checked.length > 0) {
+
+            p0+=Math.pow(stateVec[checked[0]].abs(), 2);
+            p1+=Math.pow(stateVec[checked[0] + shiftFac].abs(), 2);
+
+
+            let remind = checked.indexOf(checked[0] + shiftFac);
+            checked.splice(remind,1);
+            checked.shift();
+        }
+        //p0=p0.toFixed(4);
+        //p1=p1.toFixed(4);
+
+
+        //let rand = Math.random();
+        let rand = Math.random();
+        let entang = []; //scale sv, then scale qVec -> How should phase be handled? is it also scaled? or should we add to the real component only
+
+        //how about collapse, potentially apply x gates to states, then remove all CNots from cstates with target =measured
+        //then calcStateVec();
+
+        let toRm = [];
+        for (let j = 0; j < cStates.length; j++) {
+            if (cStates[j].control == qnum) {
+                entang.push(cStates[j].target);
+                toRm.push(j);
+            }
+        }
+
+        for (let j = 0; j < toRm.length; j++) {
+            cStates.splice(toRm[j] - j, 1); //remove entanglements after measure
+        }
+
+        
+        // When can you completely tensor decomp? (no entanglements, but CNOT(+-,+-) also work)
+        // UNTESTED (When you remove entang , update all qbits in entang that do not have any other active entangs)
+        // For now, we choose to simply adjust (theta) values on the bloch sphere, scaled by (P(measured)+P(notMeasured))/P(measured)
+
+
+
+        qstates.push(qVecs);
+
+        // For now, we choose to simply adjust (theta) values on the bloch sphere, scaled by (P(measured)+P(notMeasured))/P(measured)
+        if (rand < p0) {//it's |0>
+            //remove all 1> and scale, then loop svCords
+
+            qVecs[qnum] = [new Complex(1), new Complex(0)];
+            drawGate("M0", qnum);
+            alert("Quantum Measurement of " + String(qnum + 1) + " measures |0>" + "\n p(|0>)=" + String(p0) + "\n p(|1>)=" + String(p1) + "\nNow performing potential rotations to entangled qubits.");
+            closeMeasure();
+            window.updateVector(blochData[qnum], bvecs[qnum], 90, 0);
+            curCords[qnum]={'theta':90,'phi':0};
+
+            if(p1.toFixed(4)!=0){
+                //zero and scale
+                let checked = [...Array(svlen).keys()];
+                while (checked.length > 0) {
+                    
+                    let p0s=Math.pow(stateVec[checked[0]].abs(), 2);
+                    let p1s=Math.pow(stateVec[checked[0]+shiftFac].abs(), 2);
+                    
+                    if(p1s.toFixed(4)!=0){
+                        stateVec[checked[0]+shiftFac]=new Complex(0);
+                        
+                    }
+                    if(p0s.toFixed(4)!=0){
+                            stateVec[checked[0]]=stateVec[checked[0]].mul(Math.sqrt((p0+p1)/p0));
+                    }
+
+                    let remind = checked.indexOf(checked[0] + shiftFac);
+                    checked.splice(remind,1);
+                    checked.shift();
+                }
+
+        }
+        } else { //it's |1>
+        //remove all 0> and scale
+            drawGate("M1", qnum);
+            qVecs[qnum] = [new Complex(0), new Complex(1)];
+
+            alert("Quantum Measurement of " + String(qnum + 1) + " measures |1>" + "\n p(|0>)=" + String(p0) + "\n p(|1>)=" + String(p1) + "\nNow performing potential rotations to entangled qubits.");
+            
+            closeMeasure();
+            window.updateVector(blochData[qnum], bvecs[qnum], -90, 0);
+            curCords[qnum]={'theta':-90,'phi':0};
+
+            if(p0.toFixed(4)!=0){
+                //zero and scale
+                let checked = [...Array(svlen).keys()];
+            while (checked.length > 0) {
+                
+                let p0s=Math.pow(stateVec[checked[0]].abs(), 2);
+                let p1s=Math.pow(stateVec[checked[0]+shiftFac].abs(), 2);
+                
+                if(p0s.toFixed(4)!=0){
+                    stateVec[checked[0]]=new Complex(0);
+                
+                }
+                if(p1s.toFixed(4)!=0){
+                        stateVec[checked[0]+shiftFac]=stateVec[checked[0]+shiftFac].mul(Math.sqrt((p0+p1)/p1));
+                }
+
+                let remind = checked.indexOf(checked[0] + shiftFac);
+                checked.splice(remind,1);
+                checked.shift();
+            }
+
+            }
+        }
+
+        let toUp=[...Array(nqub).keys()];
+        toUp.splice(qnum,1);
+        for(let j=0;j<toUp.length;j++){
+            svCords(toUp[j]);
+        }
+        
+        /* OLD imp of individual Qubit rotation -> instead work from SV
+        if (rand < p0) {//it's |0>
+            qVecs[qnum] = [new Complex(1), new Complex(0)];
+            drawGate("M0", qnum);
+            alert("Quantum Measurement of " + String(qnum + 1) + " measures |0>" + "\n p(|0>)=" + String(p0.toFixed(4)) + "\n p(|1>)=" + String(p1.toFixed(4)) + "\nEntangled Qubits are not rotated");
+            closeMeasure();
+            window.updateVector(blochData[qnum], bvecs[qnum], 90, 0);
+        } else { //it's |1>
+            drawGate(qnum, "M1");
+            qVecs[qnum] = [new Complex(0), new Complex(1)];
+
+            alert("Quantum Measurement of " + String(qnum + 1) + " measures |1>" + "\n p(|0>)=" + String(p0.toFixed(4)) + "\n p(|1>)=" + String(p1.toFixed(4)) + "\nNow performing potential rotations to entangled qubits.");
+            
+            closeMeasure();
+            window.updateVector(blochData[qnum], bvecs[qnum], -90, 0);
+            for (let j = 0; j < entang.length; j++) {
+                gateApply(entang[j], xGate, 180);
+            }
+
+        }
+        
+        calcStateVec();
+        */
+        drawSV();
+    }
+    
+
+    function svCords(qnum){ // for now let's focus on curCords[qnum].theta, but there is possibility to withdraw whole ind states (at least without entang, potential with entang).
+        //console.log(qnum);
+        let p0=0;
+        let p1=0;
+        let shiftFac = expRight(qnum);
+        let checked = [...Array(svlen).keys()];
+        while (checked.length > 0) {
+            //console.log(checked[0]);
+            p0+=Math.pow(stateVec[checked[0]].abs(), 2);
+            p1+=Math.pow(stateVec[checked[0]+shiftFac].abs(), 2);
+
+            let remind = checked.indexOf(checked[0] + shiftFac);
+            checked.splice(remind,1);
+            checked.shift();
+        }
+        p0=p0.toFixed(4);
+        p1=p1.toFixed(4);
+        let q0=Math.pow(qVecs[qnum][0].abs(),2).toFixed(4);
+        let q1=Math.pow(qVecs[qnum][1].abs(),2).toFixed(4);
+        if(p0 == 1){
+            curCords[qnum]={'theta':90,'phi':0};
+            if(q0!=1){
+                qVecs[qnum]=[new Complex(1),new Complex(0)];
+            }
+
+        } else if(p1 == 1){
+            curCords[qnum]={'theta':-90,'phi':0};
+            if(q1!=1){
+                qVecs[qnum]=[new Complex(0),new Complex(1)];
+            }
+
+    } else{
+        curCords[qnum].theta=(p0-p1)*90;
+        if(q0!=p0){// this may not preserve phase correctly. In the future the vector may be able to be derived from tensorDecomp
+            if(q0!=0 && q1!=0){
+                qVecs[qnum][0]=qVecs[qnum][0].mul(Math.sqrt(p0/q0));// this may not preserve phase correctly.
+                qVecs[qnum][1]=qVecs[qnum][1].mul(Math.sqrt(p1/q1));// this may not preserve phase correctly.
+            }
+            else{
+                //phi=0 -> already true
+                qVecs[qnum]=[new Complex(Math.sqrt(p0)),new Complex(Math.sqrt(p1))]; // in the future these values may be derived from tensorDecomp and will allow preservation of phase.
+            }
+            }
+
+    }
+    window.updateVector(blochData[qnum], bvecs[qnum], curCords[qnum].theta, curCords[qnum].phi);
+    }
+
+    var qVecs = initQC(nqub);
+    initSV();
+
+</script>
+
+
+</html>
